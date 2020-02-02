@@ -79,7 +79,7 @@ def winning(board, piece):
 
 def board_score(board, piece):
     score = 0
-    #horizontal evaluation
+    #Horizontal evaluation
     for r in range(ROWS):
         row_list = [int(i) for i in list(board[r,:])]
         for c in range(COLUMNS-3):
@@ -89,6 +89,33 @@ def board_score(board, piece):
             elif four_window.count(piece) == 3 and four_window.count(EMPTY) == 1:
                 score += 20
 
+    #Vertical evaluation
+    for c in range(COLUMNS):
+        col_list = [int(i) for i in list(board[:,c])]
+        for r in range(ROWS - 3):
+            four_window = col_list[r:r+4]
+            if four_window.count(piece) == 4:
+                score += 100
+            elif four_window.count(piece) == 3 and four_window.count(EMPTY) == 1:
+                score += 20
+    
+    #Positively sloped diagonal evaluation
+    for r in range(ROWS - 3):
+        for c in range(COLUMNS-3):
+            four_window = [board[r+i][c+i] for i in range(4)]
+            if four_window.count(piece) == 4:
+                score += 100
+            elif four_window.count(piece) == 3 and four_window.count(EMPTY) == 1:
+                score += 20
+
+    #Negatively sloped diagonal evaluation
+    for r in range(ROWS - 3):
+        for c in range(COLUMNS-3):
+            four_window = [board[r+(3-i)][c+i] for i in range(4)]
+            if four_window.count(piece) == 4:
+                score += 100
+            elif four_window.count(piece) == 3 and four_window.count(EMPTY) == 1:
+                score += 20
 
     return score
 
@@ -203,4 +230,4 @@ while not game_over:
             draw_board(board)
 
     if game_over:
-        pygame.time.wait(5000)
+        pygame.time.wait(3000)
