@@ -77,6 +77,22 @@ def winning(board, piece):
             if board[r][c] == piece and board[r-1][c+1] == piece and board[r-2][c+2] == piece and board[r-3][c+3] == piece:
                 return True
 
+def evaluate_window(window, piece):
+    score = 0
+    opponent_piece = PLAYER_PIECE
+    if piece == PLAYER_PIECE:
+        opponent_piece = AI_PIECE
+    if window.count(piece) == 4:
+        score += 100
+    elif window.count(piece) == 3 and window.count(EMPTY) == 1:
+        score += 20
+    elif window.count(piece) == 2 and window.count(EMPTY) == 2:
+        score += 10 
+
+    if window.count(opponent_piece) == 3 and window.count(EMPTY) == 1:
+        score -= 60   
+    return score
+
 def board_score(board, piece):
     score = 0
     #Horizontal evaluation
@@ -84,39 +100,28 @@ def board_score(board, piece):
         row_list = [int(i) for i in list(board[r,:])]
         for c in range(COLUMNS-3):
             four_window = row_list[c:c+4]
-            if four_window.count(piece) == 4:
-                score += 100
-            elif four_window.count(piece) == 3 and four_window.count(EMPTY) == 1:
-                score += 20
+            score += evaluate_window(four_window, piece)
 
     #Vertical evaluation
     for c in range(COLUMNS):
         col_list = [int(i) for i in list(board[:,c])]
         for r in range(ROWS - 3):
             four_window = col_list[r:r+4]
-            if four_window.count(piece) == 4:
-                score += 100
-            elif four_window.count(piece) == 3 and four_window.count(EMPTY) == 1:
-                score += 20
+            score += evaluate_window(four_window, piece)
+
     
     #Positively sloped diagonal evaluation
     for r in range(ROWS - 3):
         for c in range(COLUMNS-3):
             four_window = [board[r+i][c+i] for i in range(4)]
-            if four_window.count(piece) == 4:
-                score += 100
-            elif four_window.count(piece) == 3 and four_window.count(EMPTY) == 1:
-                score += 20
+            score += evaluate_window(four_window, piece)
+
 
     #Negatively sloped diagonal evaluation
     for r in range(ROWS - 3):
         for c in range(COLUMNS-3):
             four_window = [board[r+(3-i)][c+i] for i in range(4)]
-            if four_window.count(piece) == 4:
-                score += 100
-            elif four_window.count(piece) == 3 and four_window.count(EMPTY) == 1:
-                score += 20
-
+            score += evaluate_window(four_window, piece)
     return score
 
 def get_valid_locations(board):
@@ -127,7 +132,7 @@ def get_valid_locations(board):
     return valid_locations
 
 def pick_move(board, piece):
-    best_score = 0
+    best_score = -999999
     valid_locations = get_valid_locations(board)
     best_col = random.choice(valid_locations)
     for col in valid_locations:
