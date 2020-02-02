@@ -4,6 +4,8 @@ import sys
 import math
 import random
 
+# AI is the maximizing player, player is the minimizing player
+
 ROWS = 6
 COLUMNS = 7
 SQUARESIZE = 100
@@ -85,16 +87,23 @@ def evaluate_window(window, piece):
     if window.count(piece) == 4:
         score += 100
     elif window.count(piece) == 3 and window.count(EMPTY) == 1:
-        score += 20
+        score += 5
     elif window.count(piece) == 2 and window.count(EMPTY) == 2:
-        score += 10 
+        score += 2 
 
     if window.count(opponent_piece) == 3 and window.count(EMPTY) == 1:
-        score -= 60   
+        score -= 4   
     return score
 
 def board_score(board, piece):
     score = 0
+    
+    # Scoring center column to add preference to play in the center
+    center_list = [int(i) for i in list(board[:,COLUMNS//2])]
+    center_count = center_list.count(piece)
+    score += center_count * 3
+
+
     #Horizontal evaluation
     for r in range(ROWS):
         row_list = [int(i) for i in list(board[r,:])]
@@ -132,7 +141,7 @@ def get_valid_locations(board):
     return valid_locations
 
 def pick_move(board, piece):
-    best_score = -999999
+    best_score = -math.inf
     valid_locations = get_valid_locations(board)
     best_col = random.choice(valid_locations)
     for col in valid_locations:
@@ -146,6 +155,48 @@ def pick_move(board, piece):
             best_col = col
         
     return best_col
+
+def is_terminal_node(board):
+    return winning(board, PLAYER_PIECE) or winning(board, AI_PIECE) or len(get_valid_locations(board)) == 0
+
+def minimax(board, depth, maximizingPlayer):
+    is_terminal = is_terminal_node(board)
+    valid_locations = get_valid_locations(board)
+    if depth == 0 or is_terminal:
+        if is_terminal:
+            if winning(board, AI_PIECE):
+                return (100000000000000, None)
+            elif winning(board, PLAYER_PIECE):
+                return (-100000000000000, None)
+            else:
+                return (0, None)
+        else:
+            return (board_score(board, AI_PIECE), None)
+    
+    if maximizingPlayer:
+        score = -math.inf
+        column = random.choice(valid_locations)
+        for col in valid_locations:
+            row = get_next_open_row(board, col)
+            board_copy = board.copy()
+            drop_piece(board_copy, row, col, AI_PIECE)
+            new_score =  minimax(board_copy, depth-1, False)[0]
+            if new_score > score:
+                score = new_score
+                column = col
+        return new_score, column
+    else:
+        score = math.inf
+        column = random.choice(valid_locations)
+        for col in valid_locations:
+            row = get_next_open_row(board, col)
+            board_copy = board.copy()
+            drop_piece(board_copy, row, col, PLAYER_PIECE)
+            new_score = minimax(board_copy, depth-1, True)[0]
+            if new_score < score:
+                score = new_score
+                column = col
+        return new_score, column
 
 
 def draw_board(board):
@@ -219,7 +270,7 @@ while not game_over:
 
     if turn == AI and not game_over:
         # column = random.randint(0, COLUMNS-1)
-        column = pick_move(board, AI_PIECE)
+        score, column = minimax(board, 3, True)
         if is_valid_location(board, column):
             pygame.time.wait(1000)
             row = get_next_open_row(board, column)
