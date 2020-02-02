@@ -2,6 +2,7 @@ import numpy as np
 import pygame
 import sys
 import math
+import random
 
 ROWS = 6
 COLUMNS = 7
@@ -11,11 +12,15 @@ BLUE = (0, 0, 255)
 BLACK = (0, 0, 0)
 RED = (255, 0, 0)
 YELLOW = (255, 255, 0)
+PLAYER = 0
+AI = 1
+
 pygame.init()
 msg_font = pygame.font.SysFont("monospace", 75)
 
 
 def create_board():
+    ''' initializes the board'''
     board = np.zeros((ROWS, COLUMNS))
     return board
 
@@ -99,6 +104,8 @@ window = pygame.display.set_mode((width, height))
 draw_board(board)
 pygame.display.update()
 
+
+#Game loop
 while not game_over:
 
     for event in pygame.event.get():
@@ -116,7 +123,7 @@ while not game_over:
             pygame.display.update()
         if event.type == pygame.MOUSEBUTTONDOWN:
             # # Check whose turn it is
-            if turn == 0:
+            if turn == PLAYER:
                 # Player 1 input
                 posx = event.pos[0]
                 column = (posx // SQUARESIZE)
@@ -130,20 +137,22 @@ while not game_over:
                             "Player 1 wins!", 1, (255, 255, 255))
                         window.blit(label, (40, 10))
                         game_over = True
-            else:
-                # Player 2 input
-                posx = event.pos[0]
-                column = (posx // SQUARESIZE)
-                if is_valid_location(board, column):
-                    row = get_next_open_row(board, column)
-                    drop_piece(board, row, column, 2)
-                    if winning(board, 2):
-                        pygame.draw.rect(
-                            window, BLACK, (0, 0, width, SQUARESIZE))
-                        label = msg_font.render(
-                            "Player 2 wins!", 1, (255, 255, 255))
-                        window.blit(label, (40, 10))
-                        game_over = True
+                    turn += 1
+                    turn %= 2
+
+
+    if turn == AI and not game_over:
+        column = random.randint(0, COLUMNS-1)
+        if is_valid_location(board, column):
+            pygame.time.wait(1000)
+            row = get_next_open_row(board, column)
+            drop_piece(board, row, column, 2)
+            if winning(board, 2):
+                pygame.draw.rect(window, BLACK, (0, 0, width, SQUARESIZE))
+                label = msg_font.render("AI wins!", 1, (255, 255, 255))
+                window.blit(label, (40, 10))
+                game_over = True
+
             turn += 1
             turn %= 2
             draw_board(board)
